@@ -15,12 +15,11 @@ const routes: Routes = [
   {
     path: 'places',
     loadChildren: () => import('./places/places.module').then( m => m.PlacesPageModule)
-  }/*,
+  },
   {
     path: 'discover',
     loadChildren: () => import('./places/discover/discover.module').then( m => m.DiscoverPageModule)
-  },
-  */
+  }
 ];
 
 @NgModule({
