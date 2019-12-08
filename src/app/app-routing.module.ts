@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
 import { BookingsPageModule } from './bookings/bookings.module';
+import { AuthGuard } from './auth/auth.guard';
 
 const routes: Routes = [
   { path: '', redirectTo: 'places', pathMatch: 'full' },
@@ -10,16 +11,18 @@ const routes: Routes = [
   },
   {
     path: 'booking',
-    loadChildren: () => import('./bookings/bookings.module').then( m => m.BookingsPageModule)
+    loadChildren: () => import('./bookings/bookings.module').then( m => m.BookingsPageModule),
+    canLoad: [AuthGuard]
   },
   {
     path: 'places',
-    loadChildren: () => import('./places/places.module').then( m => m.PlacesPageModule)
-  },
+    loadChildren: () => import('./places/places.module').then( m => m.PlacesPageModule),
+    canLoad: [AuthGuard]
+  }/*,
   {
     path: 'discover',
     loadChildren: () => import('./places/discover/discover.module').then( m => m.DiscoverPageModule)
-  }
+  }*/
 ];
 
 @NgModule({
