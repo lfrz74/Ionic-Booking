@@ -7,6 +7,26 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-
+<ion-content class="ion-padding">
+  <ion-grid>
+    <ion-row>
+      <ion-col size-md="6" offset-md="3">
+        <ion-list>
+          <ion-item-sliding *ngFor="let booki of loadedBookings" #slidingBooking>
+            <ion-item>
+              <ion-label>
+                <h5>{{ booki.placeTitle }}</h5>
+                <p>Guests: {{ booki.guestNumber }}</p>
+              </ion-label>
+            </ion-item>
+            <ion-item-options>
+              <ion-item-option color="danger" (click)="onCancelBooking(booki.id, slidingBooking)">
+                <ion-icon name="trash" slot="icon-only"></ion-icon>
+              </ion-item-option>
+            </ion-item-options>
+          </ion-item-sliding>
+        </ion-list>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 </ion-content>
