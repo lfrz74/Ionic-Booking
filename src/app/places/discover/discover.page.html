@@ -8,9 +8,9 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-segment>
-    <ion-segment-button>All Places</ion-segment-button>
-    <ion-segment-button>Bookable Places</ion-segment-button>
+  <ion-segment (ionChange)="onFilterUpdate($event)">
+    <ion-segment-button value="all" checked>All Places</ion-segment-button>
+    <ion-segment-button value="bookable">Bookable Places</ion-segment-button>
   </ion-segment>
   <ion-grid>
     <ion-row>
