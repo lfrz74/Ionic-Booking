@@ -14,6 +14,7 @@ import { Place } from '../places.model';
 })
 export class OffersPage implements OnInit, OnDestroy {
   offers: Place[];
+  isLoading = false;
   private placesSub: Subscription;
 
   constructor(private placeService: PlacesService, private router: Router) { }
@@ -21,6 +22,13 @@ export class OffersPage implements OnInit, OnDestroy {
   ngOnInit() {
     this.placesSub = this.placeService.places.subscribe(pl => {
       this.offers = pl;
+    });
+  }
+
+  ionViewWillEnter() {
+    this.isLoading = true;
+    this.placeService.fetchPlaces().subscribe(() => {
+      this.isLoading = false;
     });
   }
 
