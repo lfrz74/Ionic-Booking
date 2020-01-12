@@ -13,6 +13,7 @@ import { Booking } from './booking.model';
 export class BookingsPage implements OnInit, OnDestroy {
   loadedBookings: Booking[];
   private bookSub: Subscription;
+  isLoading = false;
 
   constructor(private bookingService: BookingsService,
               private loaderCtrl: LoadingController) { }
@@ -23,6 +24,12 @@ export class BookingsPage implements OnInit, OnDestroy {
     });
   }
 
+  ionViewWillEnter() {
+    this.isLoading = true;
+    this.bookingService.fetchBookings().subscribe(() => {
+      this.isLoading = false;
+    });
+  }
   onCancelBooking(bookingId: string, slidingEl: IonItemSliding)  {
     slidingEl.close();
     this.loaderCtrl.create({message: 'Cancelling...'}).then(loaderEl => {
