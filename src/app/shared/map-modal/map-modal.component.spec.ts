@@ -1,5 +1,4 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-import { IonicModule } from '@ionic/angular';
 
 import { MapModalComponent } from './map-modal.component';
 
@@ -9,14 +8,16 @@ describe('MapModalComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ MapModalComponent ],
-      imports: [IonicModule.forRoot()]
-    }).compileComponents();
+      declarations: [ MapModalComponent ]
+    })
+    .compileComponents();
+  }));
 
+  beforeEach(() => {
     fixture = TestBed.createComponent(MapModalComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
-  }));
+  });
 
   it('should create', () => {
     expect(component).toBeTruthy();
