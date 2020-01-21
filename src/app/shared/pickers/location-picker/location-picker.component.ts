@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { HttpClient } from '@angular/common/http';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import { MapModalComponent } from '../../map-modal/map-modal.component';
 import { environment } from '../../../../environments/environment';
+import { PlaceLocation } from 'src/app/places/location.model';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-location-picker',
@@ -12,6 +14,9 @@ import { environment } from '../../../../environments/environment';
   styleUrls: ['./location-picker.component.scss']
 })
 export class LocationPickerComponent implements OnInit {
+  selectedLocationImage: string;
+  isLoading = false;
+
   constructor(
     private modalCtrl: ModalController,
     private httpClient: HttpClient) {}
@@ -24,8 +29,22 @@ export class LocationPickerComponent implements OnInit {
         if (!modalData.data) {
           return;
         }
-        this.getAddress(modalData.data.lat, modalData.data.lng).subscribe(() => {
-
+        const pickedLocation: PlaceLocation = {
+          lat: modalData.data.lat,
+          lng: modalData.data.lng,
+          address: null,
+          staticMapImageUrl: null
+        };
+        this.isLoading = true;
+        this.getAddress(modalData.data.lat, modalData.data.lng).pipe(
+          switchMap(addr => {
+            pickedLocation.address = addr;
+            return of(this.getMapImage(pickedLocation.lat, pickedLocation.lng, 14));
+          })
+        ).subscribe(staticMap => {
+          pickedLocation.staticMapImageUrl = staticMap;
+          this.selectedLocationImage = staticMap;
+          this.isLoading = false;
         });
       });
       modalEl.present();
@@ -33,12 +52,23 @@ export class LocationPickerComponent implements OnInit {
   }
 
   private getAddress(lat: number, lng: number) {
-    return this.httpClient.get(
+    return this.httpClient.get<any>(
       `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${environment.googleMapsAPIKey}`)
     .pipe(
-      map(geoData => {
+      map((geoData: any) => {
+        if (!geoData || !geoData.results || geoData.results.length === 0) {
+          return null;
+        }
+        return geoData.results[0].formatted_address;
+
         console.log(geoData);
       })
     );
+  }
+
+  private getMapImage(lat: number, lng: number, zoom: number) {
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=500x300&maptype=roadmap
+    &markers=color:red%7Clabel:S%7C${lat},${lng}
+    &key=${environment.googleMapsAPIKey}`;
   }
 }
