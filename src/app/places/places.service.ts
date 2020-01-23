@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 
 import { Place } from './places.model';
 import { AuthService } from '../auth/auth.service';
+import { PlaceLocation } from './location.model';
 
 // [
 //   new Place(
@@ -47,6 +48,7 @@ interface PlaceData {
   price: number;
   title: string;
   userId: string;
+  location: PlaceLocation;
 }
 
 @Injectable({
@@ -72,7 +74,8 @@ export class PlacesService {
         for (const key in resData) {
           if (resData.hasOwnProperty(key)) {
             places.push(new Place(key, resData[key].title, resData[key].description, resData[key].imageUrl,
-              resData[key].price, new Date(resData[key].availableFrom), new Date(resData[key].availableTo), resData[key].userId ));
+              resData[key].price, new Date(resData[key].availableFrom), new Date(resData[key].availableTo), 
+              resData[key].userId, resData[key].location ));
           }
         }
         return places;
@@ -87,12 +90,12 @@ export class PlacesService {
     return this.httpClient.get<PlaceData>(`https://ionic-booking-api.firebaseio.com/offered-places/${id}.json`)
       .pipe(map(resData => {
         return new Place(id, resData.title, resData.description, resData.imageUrl, resData.price,
-          new Date(resData.availableFrom), new Date(resData.availableTo), resData.userId );
+          new Date(resData.availableFrom), new Date(resData.availableTo), resData.userId, resData.location );
       }));
       //  return {...pl.find(p => p.id === id )};
   }
 
-  addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date) {
+  addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date, loc: PlaceLocation) {
     let generatedId: string;
     const newPlace = new Place(
       Math.random().toString(),
@@ -102,7 +105,8 @@ export class PlacesService {
       price,
       dateFrom,
       dateTo,
-      this.authService.userId
+      this.authService.userId,
+      loc
     );
     return this.httpClient.post<{name: string}>('https://ionic-booking-api.firebaseio.com/offered-places.json',
       { ...newPlace, id: null }).pipe(
@@ -133,7 +137,7 @@ export class PlacesService {
       const oldPlace = updatedPlaces[updatedPlaceIndex];
       updatedPlaces[updatedPlaceIndex] = new Place(oldPlace.id, title, description,
         oldPlace.imageUrl, oldPlace.price, oldPlace.availableFrom, oldPlace.availableTo,
-        oldPlace.userId);
+        oldPlace.userId, oldPlace.location);
       return this.httpClient.put(`https://ionic-booking-api.firebaseio.com/offered-places/${placeId}.json`,
         { ...updatedPlaces[updatedPlaceIndex], id: null }
       );
