@@ -6,7 +6,7 @@ import { of } from 'rxjs';
 
 import { MapModalComponent } from '../../map-modal/map-modal.component';
 import { environment } from '../../../../environments/environment';
-import { PlaceLocation } from 'src/app/places/location.model';
+import { PlaceLocation } from '../../../places/location.model';
 
 @Component({
   selector: 'app-location-picker',
@@ -62,8 +62,6 @@ export class LocationPickerComponent implements OnInit {
           return null;
         }
         return geoData.results[0].formatted_address;
-
-        console.log(geoData);
       })
     );
   }
