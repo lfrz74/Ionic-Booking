@@ -1,5 +1,7 @@
 {
   "name": "Ionic-Booking",
-  "integrations": {},
+  "integrations": {
+    "capacitor": {}
+  },
   "type": "angular"
 }

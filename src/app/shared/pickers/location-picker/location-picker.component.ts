@@ -1,12 +1,13 @@
 import { Component, OnInit, EventEmitter, Output } from '@angular/core';
-import { ModalController } from '@ionic/angular';
+import { ModalController, ActionSheetController, AlertController } from '@ionic/angular';
 import { HttpClient } from '@angular/common/http';
 import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { Capacitor, Plugins } from '@capacitor/core';
 
 import { MapModalComponent } from '../../map-modal/map-modal.component';
 import { environment } from '../../../../environments/environment';
-import { PlaceLocation } from '../../../places/location.model';
+import { PlaceLocation, Coordinates } from '../../../places/location.model';
 
 @Component({
   selector: 'app-location-picker',
@@ -20,44 +21,99 @@ export class LocationPickerComponent implements OnInit {
 
   constructor(
     private modalCtrl: ModalController,
-    private httpClient: HttpClient) {}
+    private httpClient: HttpClient,
+    private actionSheetCtrl: ActionSheetController,
+    private alertCtrl: AlertController) {}
 
   ngOnInit() {}
 
   onPickLocation() {
+    this.actionSheetCtrl.create({
+      header: 'Please Choose',
+      buttons: [
+        {text: 'Auto-Locate', handler: () => { this.locateUser(); }},
+        {text: 'Pick on Map', handler: () => { this.OpenMap(); }},
+        {text: 'Cancel', role: 'Cancel'}
+      ]
+    })
+    .then(actionSheetEl => {
+      actionSheetEl.present();
+    });
+  }
+
+  private locateUser() {
+    if (!Capacitor.isPluginAvailable('Geolocation')) {
+      this.showErrorAlert();
+      return;
+    }
+    this.isLoading = true;
+    Plugins.Geolocation.getCurrentPosition()
+    .then(geoPosition => {
+      const coordinates: Coordinates = {
+        lat: geoPosition.coords.latitude,
+        lng: geoPosition.coords.longitude
+      };
+      this.createPlace(coordinates.lat, coordinates.lng);
+      this.isLoading = false;
+    })
+    .catch(err => {
+      this.isLoading = false;
+      this.showErrorAlert();
+    });
+
+  }
+
+  private showErrorAlert() {
+    this.alertCtrl.create({
+      header: 'Could not fetch location',
+      message: 'Please use the map to pick a location!',
+      buttons: ['Okay']
+    }).then(alertEl => alertEl.present());
+  }
+
+  private OpenMap() {
     this.modalCtrl.create({ component: MapModalComponent }).then(modalEl => {
       modalEl.onDidDismiss().then(modalData => {
         if (!modalData.data) {
           return;
         }
-        const pickedLocation: PlaceLocation = {
-          lat: modalData.data.lat,
-          lng: modalData.data.lng,
-          address: null,
-          staticMapImageUrl: null
+        const coordinates: Coordinates = {
+          lat:  modalData.data.lat,
+          lng: modalData.data.lng
         };
-        this.isLoading = true;
-        this.getAddress(modalData.data.lat, modalData.data.lng).pipe(
-          switchMap(addr => {
-            pickedLocation.address = addr;
-            return of(this.getMapImage(pickedLocation.lat, pickedLocation.lng, 14));
-          })
-        ).subscribe(staticMap => {
-          pickedLocation.staticMapImageUrl = staticMap;
-          this.selectedLocationImage = staticMap;
-          this.isLoading = false;
-          this.locationPick.emit(pickedLocation);
-        });
+        this.createPlace(coordinates.lat, coordinates.lng);
       });
       modalEl.present();
     });
+  }
+
+  private createPlace(lat1: number, lng1: number) {
+    const pickedLocation: PlaceLocation = {
+      lat: lat1,
+      lng: lng1,
+      address: null,
+      staticMapImageUrl: null
+    };
+    this.isLoading = true;
+    this.getAddress(lat1, lng1).pipe(
+      switchMap(addr => {
+        pickedLocation.address = addr;
+        return of(this.getMapImage(pickedLocation.lat, pickedLocation.lng, 14));
+      })
+    ).subscribe(staticMap => {
+      pickedLocation.staticMapImageUrl = staticMap;
+      this.selectedLocationImage = staticMap;
+      this.isLoading = false;
+      this.locationPick.emit(pickedLocation);
+    });
+
   }
 
   private getAddress(lat: number, lng: number) {
     return this.httpClient.get<any>(
       `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${environment.googleMapsAPIKey}`)
     .pipe(
-      map((geoData: any) => {
+      map((geoData) => {
         if (!geoData || !geoData.results || geoData.results.length === 0) {
           return null;
         }
