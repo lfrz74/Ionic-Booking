@@ -95,13 +95,13 @@ export class PlacesService {
       //  return {...pl.find(p => p.id === id )};
   }
 
-  addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date, loc: PlaceLocation) {
+  addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date, loc: PlaceLocation, imageUrl: string) {
     let generatedId: string;
     const newPlace = new Place(
       Math.random().toString(),
       title,
       description,
-      'https://mansionesmiami.com/wp-content/uploads/2019/09/casa-de-lujo.jpg',
+      imageUrl,
       price,
       dateFrom,
       dateTo,
@@ -146,4 +146,15 @@ export class PlacesService {
       this._places.next(updatedPlaces);
     }));
   }
+
+  uploadImage(image: File) {
+    const uploadData = new FormData();
+    uploadData.append('image', image);
+    
+    return this.httpClient.post<{imageUrl: string, imagePath: string}>(
+      'https://us-central1-ionic-booking-api.cloudfunctions.net/storeImage',
+      uploadData
+    )
+  }
+
 }
