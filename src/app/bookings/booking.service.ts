@@ -41,13 +41,28 @@ export class BookingsService {
                firstName: string, lastName: string, guestNumber: number,
                dateFrom: Date, dateTo: Date) {
         let generatedId: string;
-        const newBooking = new Booking(Math.random().toString(), placeId, this.authService.userId,
-            placeTitle, placeImage, firstName, lastName, guestNumber,
-            dateFrom, dateTo);
-        return this.httpClient.post<{name: string}>(
-            'https://ionic-booking-api.firebaseio.com/bookings.json',
-            {...newBooking, id: null}
-        ).pipe(switchMap(resData => {
+        let newBooking: Booking;
+        return this.authService.userId.pipe(take(1), switchMap(userId => {
+            if (!userId) {
+                throw new Error('No user id found..!');
+            }
+            newBooking = new Booking(
+                Math.random().toString(),
+                placeId,
+                userId,
+                placeTitle,
+                placeImage,
+                firstName,
+                lastName,
+                guestNumber,
+                dateFrom,
+                dateTo);
+            return this.httpClient.post<{name: string}>(
+                'https://ionic-booking-api.firebaseio.com/bookings.json',
+                {...newBooking, id: null}
+            );
+        }),
+        switchMap(resData => {
             generatedId = resData.name;
             return this.booking;
         }),

@@ -97,29 +97,35 @@ export class PlacesService {
 
   addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date, loc: PlaceLocation, imageUrl: string) {
     let generatedId: string;
-    const newPlace = new Place(
-      Math.random().toString(),
-      title,
-      description,
-      imageUrl,
-      price,
-      dateFrom,
-      dateTo,
-      this.authService.userId,
-      loc
-    );
-    return this.httpClient.post<{name: string}>('https://ionic-booking-api.firebaseio.com/offered-places.json',
-      { ...newPlace, id: null }).pipe(
-        switchMap(resData => {
-          generatedId = resData.name;
-          return this.places;
-        }),
-        take(1),
-        tap(pl => {
-          newPlace.id = generatedId;
-          this._places.next(pl.concat(newPlace));
-        })
+    let newPlace: Place;
+    return this.authService.userId.pipe(take(1), switchMap(userId => {
+      if (!userId) {
+        throw new Error('Found no user..!');
+      }
+      newPlace = new Place(
+        Math.random().toString(),
+        title,
+        description,
+        imageUrl,
+        price,
+        dateFrom,
+        dateTo,
+        userId,
+        loc
       );
+      return this.httpClient.post<{name: string}>('https://ionic-booking-api.firebaseio.com/offered-places.json',
+        { ...newPlace, id: null });
+    }),
+      switchMap(resData => {
+        generatedId = resData.name;
+        return this.places;
+      }),
+      take(1),
+      tap(pl => {
+        newPlace.id = generatedId;
+        this._places.next(pl.concat(newPlace));
+      })
+    );
   }
 
   onUpdatePlace(placeId: string, title: string, description: string) {
