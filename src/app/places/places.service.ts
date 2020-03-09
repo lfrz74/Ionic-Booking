@@ -67,14 +67,17 @@ export class PlacesService {
   }
 
   fetchPlaces() {
-    return this.httpClient
-      .get<{[key: string]: PlaceData}>('https://ionic-booking-api.firebaseio.com/offered-places.json')
-      .pipe(map(resData => {
+    return this.authService.token.pipe(take(1), switchMap(tok => {
+      return this.httpClient
+      .get<{[key: string]: PlaceData}>(`https://ionic-booking-api.firebaseio.com/offered-places.json?auth=${tok}`);
+
+    }),
+    map(resData => {
         const places = [];
         for (const key in resData) {
           if (resData.hasOwnProperty(key)) {
             places.push(new Place(key, resData[key].title, resData[key].description, resData[key].imageUrl,
-              resData[key].price, new Date(resData[key].availableFrom), new Date(resData[key].availableTo), 
+              resData[key].price, new Date(resData[key].availableFrom), new Date(resData[key].availableTo),
               resData[key].userId, resData[key].location ));
           }
         }
@@ -87,19 +90,29 @@ export class PlacesService {
   }
 
   getPlace(id: string) {
-    return this.httpClient.get<PlaceData>(`https://ionic-booking-api.firebaseio.com/offered-places/${id}.json`)
-      .pipe(map(resData => {
-        return new Place(id, resData.title, resData.description, resData.imageUrl, resData.price,
-          new Date(resData.availableFrom), new Date(resData.availableTo), resData.userId, resData.location );
-      }));
-      //  return {...pl.find(p => p.id === id )};
+    return this.authService.token.pipe(take(1), switchMap(tok => {
+      return this.httpClient
+      .get<PlaceData>(`https://ionic-booking-api.firebaseio.com/offered-places/${id}.json?auth=${tok}`);
+    }),
+    map(resData => {
+      return new Place(id, resData.title, resData.description, resData.imageUrl, resData.price,
+        new Date(resData.availableFrom), new Date(resData.availableTo), resData.userId, resData.location );
+    }));
   }
 
   addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date, loc: PlaceLocation, imageUrl: string) {
     let generatedId: string;
+    let fetchedUserId: string;
     let newPlace: Place;
-    return this.authService.userId.pipe(take(1), switchMap(userId => {
-      if (!userId) {
+    return this.authService.userId.pipe(
+      take(1),
+      switchMap(us => {
+        fetchedUserId = us;
+        return this.authService.token;
+      }),
+      take(1),
+      switchMap(tok => {
+      if (!fetchedUserId) {
         throw new Error('Found no user..!');
       }
       newPlace = new Place(
@@ -110,10 +123,10 @@ export class PlacesService {
         price,
         dateFrom,
         dateTo,
-        userId,
+        fetchedUserId,
         loc
       );
-      return this.httpClient.post<{name: string}>('https://ionic-booking-api.firebaseio.com/offered-places.json',
+      return this.httpClient.post<{name: string}>(`https://ionic-booking-api.firebaseio.com/offered-places.json?auth=${tok}`,
         { ...newPlace, id: null });
     }),
       switchMap(resData => {
@@ -130,7 +143,15 @@ export class PlacesService {
 
   onUpdatePlace(placeId: string, title: string, description: string) {
     let updatedPlaces: Place[];
-    return this.places.pipe(take(1), switchMap(pl => {
+    let fetchedToken: string;
+    return this.authService.token.pipe(
+      take(1),
+      switchMap(tok => {
+        fetchedToken = tok;
+        return this.places;
+      }),
+    take(1),
+    switchMap(pl => {
       if (!pl || pl.length <= 0) {
         return this.fetchPlaces();
       } else {
@@ -144,7 +165,7 @@ export class PlacesService {
       updatedPlaces[updatedPlaceIndex] = new Place(oldPlace.id, title, description,
         oldPlace.imageUrl, oldPlace.price, oldPlace.availableFrom, oldPlace.availableTo,
         oldPlace.userId, oldPlace.location);
-      return this.httpClient.put(`https://ionic-booking-api.firebaseio.com/offered-places/${placeId}.json`,
+      return this.httpClient.put(`https://ionic-booking-api.firebaseio.com/offered-places/${placeId}.json?auth=${fetchedToken}`,
         { ...updatedPlaces[updatedPlaceIndex], id: null }
       );
     }),
@@ -156,11 +177,11 @@ export class PlacesService {
   uploadImage(image: File) {
     const uploadData = new FormData();
     uploadData.append('image', image);
-    
-    return this.httpClient.post<{imageUrl: string, imagePath: string}>(
-      'https://us-central1-ionic-booking-api.cloudfunctions.net/storeImage',
-      uploadData
-    )
+    return this.authService.token.pipe(take(1), switchMap(tok => {
+      return this.httpClient.post<{imageUrl: string, imagePath: string}>(
+        'https://us-central1-ionic-booking-api.cloudfunctions.net/storeImage',
+        uploadData, {headers: {Authorization: 'Bearer ' + tok }}
+      );
+    }));
   }
-
 }

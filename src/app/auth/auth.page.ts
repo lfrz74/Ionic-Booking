@@ -3,7 +3,7 @@ import { AuthService, AuthResponseData } from './auth.service';
 import { Router } from '@angular/router';
 import { LoadingController, AlertController } from '@ionic/angular';
 import { NgForm } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, from } from 'rxjs';
 
 @Component({
   selector: 'app-auth',
@@ -64,8 +64,9 @@ export class AuthPage implements OnInit {
     }
     const email = form.value.email;
     const password = form.value.password;
-    
+
     this.authenticate(email, password);
+    form.reset();
   }
 
   onSwitchAuthMode() {
