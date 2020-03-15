@@ -31,7 +31,7 @@ export class AuthPage implements OnInit {
       .create({ keyboardClose: true, message: 'Logging in...' })
       .then(loadingEl => {
         loadingEl.present();
-        let authObs: Observable<AuthResponseData>
+        let authObs: Observable<AuthResponseData>;
         if (this.isLogin) {
           authObs = this.authService.login(email, password);
         } else {
@@ -76,8 +76,8 @@ export class AuthPage implements OnInit {
   private showAlert(msg: string) {
     this.alertCtrl
       .create({
-        header: 'Authentication failed', 
-        message: msg, 
+        header: 'Authentication failed',
+        message: msg,
         buttons: ['Okay']})
       .then(alertEl => {
         alertEl.present();
